@@ -146,6 +146,15 @@ For more control and potentially lower cost for long-running bots.
    ```
 
 9. **Start the bot with PM2**
+   
+   **Option A: Using ecosystem.config.js (Recommended)**
+   ```bash
+   pm2 start ecosystem.config.js
+   pm2 save
+   pm2 startup
+   ```
+   
+   **Option B: Direct command**
    ```bash
    pm2 start bot.js --name eztick
    pm2 save
