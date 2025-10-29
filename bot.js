@@ -52,31 +52,21 @@ function formatTick(tickTimestamp) {
 
     try {
         const tickDate = new Date(tickTimestamp);
+        const unixTimestamp = Math.floor(tickDate.getTime() / 1000);
         
         // Format for UTC display (24hr format)
         const formattedUTC = tickDate.toISOString().replace('T', ' ').replace(/\.\d+Z$/, ' UTC');
         
-        // Format for local time display (24hr format, actual timezone conversion)
-        const formattedLocal = tickDate.toLocaleString('en-US', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: false,
-            timeZoneName: 'short'
-        });
+        // Use Discord's timestamp formatting for automatic timezone conversion
+        // Format: <t:UNIX_TIMESTAMP:FORMAT>
+        // F = Long Date/Time format (e.g., "Tuesday, October 29, 2025 6:58:09 PM")
+        // Discord will automatically convert to each user's local timezone
+        const discordTimestamp = `<t:${unixTimestamp}:F>`;
         
-        // Calculate time ago
-        const now = new Date();
-        const timeDiff = now - tickDate;
-        const hours = Math.floor(timeDiff / (1000 * 60 * 60));
-        const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+        // Relative time using Discord's format (e.g., "2 hours ago")
+        const relativeTime = `<t:${unixTimestamp}:R>`;
         
-        const timeAgo = hours > 0 ? `${hours}h ${minutes}m ago` : `${minutes}m ago`;
-        
-        return `**Last Galaxy Tick:** ${formattedUTC}\n**Last Galaxy Tick LOCAL:** ${formattedLocal}\n**Time ago:** ${timeAgo}`;
+        return `**Last Galaxy Tick (UTC):** ${formattedUTC}\n**Last Galaxy Tick (Your Time):** ${discordTimestamp}\n**Time ago:** ${relativeTime}`;
     } catch (error) {
         console.error(`Error formatting tick: ${error.message}`);
         return `**Last Galaxy Tick:** ${tickTimestamp}`;
@@ -189,24 +179,29 @@ async function handleNextTickCommand(message) {
     if (tick) {
         try {
             const tickDate = new Date(tick);
+            const lastUnix = Math.floor(tickDate.getTime() / 1000);
             
             // Elite Dangerous ticks are approximately every 24 hours
             const estimatedNext = new Date(tickDate.getTime() + (24 * 60 * 60 * 1000));
-            const now = new Date();
-            const timeUntil = estimatedNext - now;
+            const nextUnix = Math.floor(estimatedNext.getTime() / 1000);
             
-            const hoursUntil = Math.floor(timeUntil / (1000 * 60 * 60));
-            const minutesUntil = Math.floor((timeUntil % (1000 * 60 * 60)) / (1000 * 60));
+            // Format UTC times
+            const lastTickUTC = tickDate.toISOString().replace('T', ' ').replace(/\.\d+Z$/, ' UTC');
+            const nextTickUTC = estimatedNext.toISOString().replace('T', ' ').replace(/\.\d+Z$/, ' UTC');
             
-            const lastTickFormatted = tickDate.toISOString().replace('T', ' ').replace(/\.\d+Z$/, ' UTC');
-            const nextTickFormatted = estimatedNext.toISOString().replace('T', ' ').replace(/\.\d+Z$/, ' UTC');
+            // Use Discord timestamps for user's local time
+            const lastTickLocal = `<t:${lastUnix}:F>`;
+            const nextTickLocal = `<t:${nextUnix}:F>`;
+            const timeUntil = `<t:${nextUnix}:R>`;
             
             const embed = new EmbedBuilder()
                 .setTitle('⏰ Next Tick Estimate')
                 .setDescription(
-                    `**Last Tick:** ${lastTickFormatted}\n` +
-                    `**Estimated Next Tick:** ${nextTickFormatted}\n` +
-                    `**Time Until:** ~${hoursUntil}h ${minutesUntil}m\n\n` +
+                    `**Last Tick (UTC):** ${lastTickUTC}\n` +
+                    `**Last Tick (Your Time):** ${lastTickLocal}\n\n` +
+                    `**Estimated Next Tick (UTC):** ${nextTickUTC}\n` +
+                    `**Estimated Next Tick (Your Time):** ${nextTickLocal}\n` +
+                    `**Time Until:** ${timeUntil}\n\n` +
                     `*Note: This is an estimate. Actual tick time may vary.*`
                 )
                 .setColor(0xFFA500)
