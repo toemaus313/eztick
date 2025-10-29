@@ -138,7 +138,14 @@ To keep the bot running continuously:
 ### Option 1: PM2 (Recommended for Node.js)
 ```bash
 npm install -g pm2
+
+# Start using ecosystem config (recommended)
+pm2 start ecosystem.config.js
+
+# Or start directly
 pm2 start bot.js --name eztick
+
+# Save configuration and enable auto-start
 pm2 save
 pm2 startup
 ```
@@ -151,6 +158,7 @@ pm2 status          # Check status
 pm2 logs eztick     # View logs
 pm2 restart eztick  # Restart bot
 pm2 stop eztick     # Stop bot
+pm2 delete eztick   # Remove from PM2
 ```
 
 ### Option 2: Docker
@@ -214,4 +222,5 @@ This project is open source and available for free use.
 - **node-fetch** - HTTP client for API requests
 - **dotenv** - Environment variable management
 
-o7 Commander! 🚀
+Find me in the black - CMDR Dirk Pitt13. o7 Commander! 🚀
+
