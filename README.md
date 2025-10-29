@@ -11,16 +11,17 @@ A Discord bot that monitors and reports Elite Dangerous galaxy tick updates from
 
 ## Prerequisites
 
-- Python 3.8 or higher
+- Node.js 18 or higher
+- npm (comes with Node.js)
 - A Discord bot token (see setup instructions below)
 
 ## Installation
 
 1. **Clone or download this repository**
 
-2. **Install Python dependencies:**
+2. **Install Node.js dependencies:**
    ```bash
-   pip install -r requirements.txt
+   npm install
    ```
 
 3. **Create a Discord Bot:**
@@ -60,7 +61,9 @@ A Discord bot that monitors and reports Elite Dangerous galaxy tick updates from
 ### Running the Bot
 
 ```bash
-python bot.py
+npm start
+# or
+node bot.js
 ```
 
 The bot will start and connect to Discord. You should see a message confirming it's connected.
@@ -132,22 +135,38 @@ The data is provided by the Elite Dangerous community and updates automatically 
 
 To keep the bot running continuously:
 
-### Option 1: Screen (Linux/Mac)
-```bash
-screen -S edtick
-python bot.py
-# Press Ctrl+A, then D to detach
-```
-
-### Option 2: PM2 (Cross-platform)
+### Option 1: PM2 (Recommended for Node.js)
 ```bash
 npm install -g pm2
-pm2 start bot.py --name edtick --interpreter python3
+pm2 start bot.js --name eztick
 pm2 save
+pm2 startup
 ```
 
-### Option 3: systemd Service (Linux)
-Create `/etc/systemd/system/edtick.service`:
+Then run the command that PM2 outputs to enable auto-start on boot.
+
+**Managing with PM2:**
+```bash
+pm2 status          # Check status
+pm2 logs eztick     # View logs
+pm2 restart eztick  # Restart bot
+pm2 stop eztick     # Stop bot
+```
+
+### Option 2: Docker
+```bash
+docker build -t eztick-bot .
+docker run -d --env-file .env --name eztick eztick-bot
+```
+
+### Option 3: DigitalOcean (Cloud Hosting)
+See the comprehensive [DigitalOcean Deployment Guide](./DIGITALOCEAN_DEPLOY.md) for detailed instructions on deploying to:
+- DigitalOcean App Platform (managed, $5/month)
+- DigitalOcean Droplets (VPS, $6/month)
+- Docker on DigitalOcean
+
+### Option 4: systemd Service (Linux)
+Create `/etc/systemd/system/eztick.service`:
 ```ini
 [Unit]
 Description=Elite Dangerous Tick Bot
@@ -157,8 +176,9 @@ After=network.target
 Type=simple
 User=your_username
 WorkingDirectory=/path/to/eztick
-ExecStart=/usr/bin/python3 bot.py
+ExecStart=/usr/bin/node bot.js
 Restart=always
+Environment=NODE_ENV=production
 
 [Install]
 WantedBy=multi-user.target
@@ -166,12 +186,12 @@ WantedBy=multi-user.target
 
 Then:
 ```bash
-sudo systemctl enable edtick
-sudo systemctl start edtick
+sudo systemctl enable eztick
+sudo systemctl start eztick
 ```
 
-### Option 4: Windows Service
-Use NSSM (Non-Sucking Service Manager) or create a scheduled task to run on startup.
+### Option 5: Windows Service
+Use [node-windows](https://www.npmjs.com/package/node-windows) or NSSM (Non-Sucking Service Manager).
 
 ## Contributing
 
@@ -184,7 +204,14 @@ This project is open source and available for free use.
 ## Credits
 
 - Data source: [tick.infomancer.uk](http://tick.infomancer.uk/)
-- Discord.py library
+- [Discord.js](https://discord.js.org/) library
 - Elite Dangerous community
+
+## Technology Stack
+
+- **Node.js** - JavaScript runtime
+- **Discord.js v14** - Discord API wrapper
+- **node-fetch** - HTTP client for API requests
+- **dotenv** - Environment variable management
 
 o7 Commander! 🚀

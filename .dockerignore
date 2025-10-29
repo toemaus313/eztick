@@ -1,0 +1,14 @@
+node_modules
+npm-debug.log
+.env
+.git
+.gitignore
+README.md
+DIGITALOCEAN_DEPLOY.md
+venv
+*.pyc
+__pycache__
+bot.py
+requirements.txt
+runtime.txt
+.env.example
