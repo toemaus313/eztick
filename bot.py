@@ -73,13 +73,16 @@ async def on_ready():
     """Called when the bot is ready."""
     print(f'{bot.user} has connected to Discord!')
     print(f'Monitoring tick updates every 5 minutes...')
+    print(f'Tick notification channel: {TICK_CHANNEL_ID if TICK_CHANNEL_ID != 0 else "NOT CONFIGURED"}')
     
     # Initialize last known tick
     global last_known_tick
     last_known_tick = await fetch_tick()
+    print(f'Initial tick on startup: {last_known_tick}')
     
     # Start the background task
     if not check_tick_updates.is_running():
+        print('Starting tick monitoring...')
         check_tick_updates.start()
 
 
@@ -106,10 +109,19 @@ async def check_tick_updates():
     """Background task to check for tick updates every 5 minutes."""
     global last_known_tick
     
+    check_time = datetime.now().isoformat()
     current_tick = await fetch_tick()
     
-    if current_tick and current_tick != last_known_tick:
-        print(f"New tick detected: {current_tick}")
+    print(f"[{check_time}] Checking for tick updates...")
+    print(f"  Current tick from API: {current_tick}")
+    print(f"  Last known tick: {last_known_tick}")
+    
+    if not current_tick:
+        print("  Failed to fetch current tick from API")
+        return
+    
+    if current_tick != last_known_tick:
+        print(f"  🚨 NEW TICK DETECTED! {current_tick}")
         
         # Update the stored tick
         last_known_tick = current_tick
@@ -118,6 +130,7 @@ async def check_tick_updates():
         if TICK_CHANNEL_ID != 0:
             channel = bot.get_channel(TICK_CHANNEL_ID)
             if channel:
+                print(f"  Sending notification to channel {TICK_CHANNEL_ID}...")
                 embed = discord.Embed(
                     title="🚨 NEW GALAXY TICK DETECTED!",
                     description=format_tick(current_tick),
@@ -126,10 +139,13 @@ async def check_tick_updates():
                 )
                 embed.set_footer(text="Data from tick.infomancer.uk")
                 await channel.send("@here", embed=embed)
+                print("  ✅ Notification sent successfully")
             else:
-                print(f"Warning: Could not find channel with ID {TICK_CHANNEL_ID}")
+                print(f"  ⚠️ Warning: Could not find channel with ID {TICK_CHANNEL_ID}")
         else:
-            print("Warning: TICK_CHANNEL_ID not configured")
+            print("  ⚠️ Warning: TICK_CHANNEL_ID not configured - no notification sent")
+    else:
+        print("  No new tick detected (tick unchanged)")
 
 
 @check_tick_updates.before_loop

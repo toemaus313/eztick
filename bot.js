@@ -53,10 +53,10 @@ function formatTick(tickTimestamp) {
     try {
         const tickDate = new Date(tickTimestamp);
         
-        // Format for UTC display
+        // Format for UTC display (24hr format)
         const formattedUTC = tickDate.toISOString().replace('T', ' ').replace(/\.\d+Z$/, ' UTC');
         
-        // Format for local time display
+        // Format for local time display (24hr format, actual timezone conversion)
         const formattedLocal = tickDate.toLocaleString('en-US', {
             year: 'numeric',
             month: '2-digit',
@@ -64,6 +64,7 @@ function formatTick(tickTimestamp) {
             hour: '2-digit',
             minute: '2-digit',
             second: '2-digit',
+            hour12: false,
             timeZoneName: 'short'
         });
         
@@ -87,9 +88,19 @@ function formatTick(tickTimestamp) {
  */
 async function checkTickUpdates() {
     const currentTick = await fetchTick();
+    const checkTime = new Date().toISOString();
     
-    if (currentTick && currentTick !== lastKnownTick) {
-        console.log(`New tick detected: ${currentTick}`);
+    console.log(`[${checkTime}] Checking for tick updates...`);
+    console.log(`  Current tick from API: ${currentTick}`);
+    console.log(`  Last known tick: ${lastKnownTick}`);
+    
+    if (!currentTick) {
+        console.error('  Failed to fetch current tick from API');
+        return;
+    }
+    
+    if (currentTick !== lastKnownTick) {
+        console.log(`  🚨 NEW TICK DETECTED! ${currentTick}`);
         
         // Update the stored tick
         lastKnownTick = currentTick;
@@ -98,6 +109,7 @@ async function checkTickUpdates() {
         if (TICK_CHANNEL_ID !== 0) {
             const channel = client.channels.cache.get(TICK_CHANNEL_ID.toString());
             if (channel) {
+                console.log(`  Sending notification to channel ${TICK_CHANNEL_ID}...`);
                 const embed = new EmbedBuilder()
                     .setTitle('🚨 NEW GALAXY TICK DETECTED!')
                     .setDescription(formatTick(currentTick))
@@ -106,12 +118,15 @@ async function checkTickUpdates() {
                     .setFooter({ text: 'Data from tick.infomancer.uk' });
                 
                 await channel.send({ content: '@here', embeds: [embed] });
+                console.log('  ✅ Notification sent successfully');
             } else {
-                console.warn(`Warning: Could not find channel with ID ${TICK_CHANNEL_ID}`);
+                console.warn(`  ⚠️ Warning: Could not find channel with ID ${TICK_CHANNEL_ID}`);
             }
         } else {
-            console.warn('Warning: TICK_CHANNEL_ID not configured');
+            console.warn('  ⚠️ Warning: TICK_CHANNEL_ID not configured - no notification sent');
         }
+    } else {
+        console.log('  No new tick detected (tick unchanged)');
     }
 }
 
@@ -119,11 +134,15 @@ async function checkTickUpdates() {
 client.on('ready', async () => {
     console.log(`${client.user.tag} has connected to Discord!`);
     console.log('Monitoring tick updates every 5 minutes...');
+    console.log(`Tick notification channel: ${TICK_CHANNEL_ID !== 0 ? TICK_CHANNEL_ID : 'NOT CONFIGURED'}`);
     
     // Initialize last known tick
     lastKnownTick = await fetchTick();
+    console.log(`Initial tick on startup: ${lastKnownTick}`);
     
-    // Start periodic check
+    // Start periodic check immediately, then every 5 minutes
+    console.log('Starting tick monitoring...');
+    checkTickUpdates(); // Run first check immediately
     setInterval(checkTickUpdates, CHECK_INTERVAL);
 });
 
