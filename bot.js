@@ -234,6 +234,40 @@ async function handleSetTickChannel(message) {
     console.log(`Tick channel set to: ${message.channel.name} (ID: ${TICK_CHANNEL_ID})`);
 }
 
+/**
+ * Handle !tickstatus command - Show current tick monitoring status
+ */
+async function handleTickStatus(message) {
+    const statusEmbed = new EmbedBuilder()
+        .setTitle('📊 Tick Monitoring Status')
+        .addFields(
+            { name: '📍 Notification Channel', value: TICK_CHANNEL_ID ? `<#${TICK_CHANNEL_ID}> (ID: ${TICK_CHANNEL_ID})` : '❌ Not configured', inline: false },
+            { name: '⏰ Check Interval', value: 'Every 5 minutes', inline: true },
+            { name: '🔍 Last Known Tick', value: lastKnownTick ? formatTick(lastKnownTick) : '❌ Not fetched yet', inline: false },
+            { name: '📡 API Status', value: 'Checking...', inline: true }
+        )
+        .setColor(TICK_CHANNEL_ID ? 0x00FF00 : 0xFFA500)
+        .setTimestamp()
+        .setFooter({ text: 'Use !tickchannel in any channel to set/update notification channel' });
+    
+    // Test API connectivity
+    try {
+        const currentTick = await fetchTick();
+        if (currentTick) {
+            statusEmbed.spliceFields(3, 1, { name: '📡 API Status', value: '✅ Online', inline: true });
+            if (currentTick !== lastKnownTick) {
+                statusEmbed.addFields({ name: '⚠️ New Tick Available', value: `A new tick is available but not yet detected. Current: ${currentTick}`, inline: false });
+            }
+        } else {
+            statusEmbed.spliceFields(3, 1, { name: '📡 API Status', value: '❌ Error fetching data', inline: true });
+        }
+    } catch (error) {
+        statusEmbed.spliceFields(3, 1, { name: '📡 API Status', value: `❌ Error: ${error.message}`, inline: true });
+    }
+    
+    await message.reply({ embeds: [statusEmbed] });
+}
+
 // Handle errors
 client.on('error', (error) => {
     console.error('Discord client error:', error);
